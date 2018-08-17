@@ -2,7 +2,7 @@ import debug from 'debug';
 
 import cache from '../cache';
 
-import { fetchFileFromRepo } from '../github';
+import { fetchFileFromRepo, searchFilesFromProfile } from '../github';
 
 const _debug = debug('dependencies:npm');
 
@@ -27,11 +27,15 @@ function dependenciesStats (packageJson) {
 }
 
 function getDependenciesFromGithubRepo (githubRepo, githubAccessToken) {
-  const cacheKey = `repo_npm_dependencies_${githubRepo.id}`;
+  return getDependenciesFromGithubRepoFile(githubRepo, 'package.json', githubAccessToken);
+}
+
+function getDependenciesFromGithubRepoFile (githubRepo, path, githubAccessToken) {
+  const cacheKey = `repo_npm_dependencies_${githubRepo.id}_${path}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
-  return fetchFileFromRepo(githubRepo, 'package.json', githubAccessToken)
+  return fetchFileFromRepo(githubRepo, path, githubAccessToken)
     .then(JSON.parse)
     .then(dependenciesStats)
     .catch(err => {
@@ -44,7 +48,19 @@ function getDependenciesFromGithubRepo (githubRepo, githubAccessToken) {
     });
 }
 
+function getDependenciesFromGithubProfile (githubProfile, githubAccessToken) {
+
+  return searchFilesFromProfile(githubProfile, 'package.json', githubAccessToken)
+    .then(
+      files => Promise.all(files.map(async file => {
+        file.repo.dependencies = await getDependenciesFromGithubRepoFile(file.repo, file.path, githubAccessToken);
+        return file.repo;
+      }))
+    );
+}
+
 export {
   getDependenciesFromGithubRepo,
+  getDependenciesFromGithubProfile,
   dependenciesStats,
 };

@@ -20,6 +20,7 @@ import {
 
 import {
   getDependenciesFromGithubRepo,
+  getDependenciesFromGithubProfile,
   dependenciesStats,
 } from './dependencies';
 
@@ -84,6 +85,26 @@ async function getProfileData (id, accessToken) {
   const recommendations = await getRecommendedProjectFromDependencies(dependencies);
 
   return { profile, opencollective, repos, dependencies, recommendations };
+}
+
+async function getProfileDataDeep (id, accessToken) {
+  if (process.browser) {
+    return fetchJson(`/data/getProfileDataDeep?id=${id}`);
+  }
+
+  const profile = await fetchProfile(id, accessToken);
+
+  const opencollective = await getCollectiveWithBacking(profile);
+
+  const repos = await fetchReposForProfile(profile, accessToken);
+
+  const deepRepos = await getDependenciesFromGithubProfile(profile, accessToken);
+
+  const dependencies = await addProjectToDependencies(getAllDependenciesFromRepos(deepRepos));
+
+  const recommendations = await getRecommendedProjectFromDependencies(dependencies);
+
+  return { profile, opencollective, repos: deepRepos, dependencies, recommendations };
 }
 
 async function getFilesData (sessionFiles) {
@@ -156,6 +177,7 @@ export {
   searchUsers,
   getUserOrgs,
   getProfileData,
+  getProfileDataDeep,
   getFilesData,
   emailSubscribe,
 };

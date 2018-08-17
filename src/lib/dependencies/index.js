@@ -16,6 +16,15 @@ function getDependenciesFromGithubRepo (githubRepo, githubAccessToken) {
   });
 }
 
+function getDependenciesFromGithubProfile (githubProfile, githubAccessToken) {
+  const strategies = [
+    npm.getDependenciesFromGithubProfile(githubProfile, githubAccessToken),
+  ];
+  return Promise.all(strategies).then(results => {
+    return flatten(results, true);
+  });
+}
+
 function dependenciesStats (parsedJson) {
   if (parsedJson.dependencies || parsedJson.devDependencies || parsedJson.peerDependencies) {
     return npm.dependenciesStats(parsedJson);
@@ -28,5 +37,6 @@ function dependenciesStats (parsedJson) {
 
 export {
   getDependenciesFromGithubRepo,
+  getDependenciesFromGithubProfile,
   dependenciesStats,
 };

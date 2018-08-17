@@ -21,6 +21,7 @@ import {
   getUserOrgs,
   searchUsers,
   getProfileData,
+  getProfileDataDeep,
   getFilesData,
   emailSubscribe,
 } from '../lib/data';
@@ -126,6 +127,14 @@ nextApp.prepare()
         res.setHeader('Cache-Control', 's-maxage=3600, max-age=0');
       }
       getProfileData(req.query.id, accessToken).then(data => res.json(data));
+    });
+
+    server.get('/data/getProfileDataDeep', (req, res) => {
+      const accessToken = get(req, 'session.passport.user.accessToken');
+      if (!accessToken) {
+        res.setHeader('Cache-Control', 's-maxage=3600, max-age=0');
+      }
+      getProfileDataDeep(req.query.id, accessToken).then(data => res.json(data));
     });
 
     server.get('/data/getFilesData', (req, res) => {

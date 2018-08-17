@@ -137,7 +137,7 @@ function fetchFileFromRepo (repo, path, accessToken) {
   _debug('Fetch file from repo',
     { repo: repo.full_name, branch: repo.default_branch, path, withAccessToken: !!accessToken });
 
-  if (repo.private === true) {
+  if (!repo.default_branch || repo.private === true) {
     const params = { owner: repo.owner.login, repo: repo.name, path: path };
     // https://octokit.github.io/rest.js/#api-Repos-getContent
     return fetchWithOctokit('repos.getContent', params, accessToken).then(getContent);
@@ -154,6 +154,43 @@ function fetchFileFromRepo (repo, path, accessToken) {
     });
 }
 
+async function searchFilesFromProfile (profile, pattern, accessToken) {
+  const searchParameters = { q: [] };
+
+  if (profile.type == 'Organization') {
+    searchParameters.q.push(`org:${profile.login}`);
+  } else {
+    searchParameters.q.push(`user:${profile.login}`);
+  }
+
+  searchParameters.q.push(`filename:${pattern}`);
+
+  searchParameters.q = searchParameters.q.join(' ');
+
+  let files = [];
+
+  // Pagination over all results
+  searchParameters.page = 1;
+  searchParameters.per_page = 100;
+  while (true) {
+    const searchFiles = await fetchWithOctokit('search.code', searchParameters, accessToken)
+      .then(
+        result => result.items.map(
+          item => ({ repo: compactRepo(item.repository), path: item.path })
+        )
+      );
+
+    files = [ ... files, ... searchFiles ];
+    if (searchFiles.length < searchParameters.per_page) {
+      break;
+    }
+    // break;
+    searchParameters.page ++;
+  }
+
+  return files;
+}
+
 function donateToken (accessToken) {
   const donatedTokens = cache.get('donatedTokens') || [];
   if (donatedTokens.indexOf(accessToken) === -1) {
@@ -167,5 +204,6 @@ export {
   fetchFileFromRepo,
   fetchProfile,
   fetchReposForProfile,
+  searchFilesFromProfile,
   donateToken,
 };

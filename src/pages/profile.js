@@ -6,7 +6,7 @@ import { get } from 'lodash';
 
 import { Link } from '../routes';
 
-import { getProfileData } from '../lib/data';
+import { getProfileDataDeep as getProfileData } from '../lib/data';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
